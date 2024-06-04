@@ -187,7 +187,7 @@ class PacientesView(QWidget):
         button_layout.addWidget(add_button)
         
         edit_button = QPushButton("Editar Paciente")
-        edit_button.clicked.connect(self.edit_patient)
+        edit_button.clicked.connect(self.add_patient)
         button_layout.addWidget(edit_button)
         
         delete_button = QPushButton("Eliminar Paciente")
@@ -203,6 +203,13 @@ class PacientesView(QWidget):
         self.load_data()
 
         self.table_view.doubleClicked.connect(self.open_patient_details)
+
+        self.editarButton = QPushButton("Editar Paciente", self)
+        self.editarButton.clicked.connect(self.editar_paciente)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.editarButton)
+        self.setLayout(layout)
 
     def open_patient_details(self, index):
         row = index.row()
@@ -240,15 +247,11 @@ class PacientesView(QWidget):
                     self.__miControlador.agregarPaciente(nombre, cedula, ruta)
                     self.load_data()
 
-    def edit_patient(self):
-        selected = self.table_view.selectionModel().selectedRows()
-        if selected:
-            row = selected[0].row()
-            cedula_paciente = self.table_view.model().item(row, 1).text()
-            nombre, ok = QInputDialog.getText(self, 'Editar Paciente', 'Nombre:')
-            if ok:
-                self.__miControlador.editarPaciente(nombre, int(cedula_paciente))
-                self.load_data()
+    def editar_paciente(self):
+        selected_row = self.table.currentRow()
+        if selected_row >= 0:
+            cedula_paciente = self.table.item(selected_row, 1).text()
+            self.controlador.mostrarVentanaEditarPaciente(cedula_paciente)
 
     def delete_patient(self):
         selected = self.table_view.selectionModel().selectedRows()
@@ -321,6 +324,43 @@ class AtributosPaciente(QDialog):
     def regresar(self):
         pass
 
+class VentanaEditarPaciente(QDialog):
+    def __init__(self, cedula, controlador):
+        super().__init__()
+        self.cedula = cedula
+        self.controlador = controlador
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("Editar Paciente")
+        
+        self.label = QLabel(f"Cédula: {self.cedula}")
+        
+        self.bioseñalButton = QPushButton("Añadir Bioseñal", self)
+        self.bioseñalButton.clicked.connect(self.añadirBioseñal)
+
+        self.imagenButton = QPushButton("Añadir Imágen Médica", self)
+        self.imagenButton.clicked.connect(self.añadirImagen)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+
+        layout.addWidget(self.bioseñalButton)
+        layout.addWidget(self.imagenButton)
+        self.setLayout(layout)
+
+    def añadirBioseñal(self):
+        options = QFileDialog.Options()
+        filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Bioseñal", "", "MAT Files (*.mat);;All Files (*)", options=options)
+        if filePath:
+            self.controlador.agregarBioseñal(self.cedula, filePath)
+
+    def añadirImagen(self):
+        options = QFileDialog.Options()
+        filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Imágen Médica", "", "DICOM Files (*.dcm);;NIFTI Files (*.nii);;All Files (*)", options=options)
+        if filePath:
+            self.controlador.agregarImagen(self.cedula, filePath)
+
 
 class MyGraphCanvas(FigureCanvas):
     def __init__(self, parent= None,width=6, height=5, dpi=100):
@@ -373,17 +413,17 @@ class InterfazGrafico(QMainWindow):
         self.sc = MyGraphCanvas(self.campo_grafico, width=5, height=4, dpi=100)
         self.layout.addWidget(self.sc)
 
-        self.boton_cargar.setText('Salir')
         #self.boton_cargar.clicked.connect(self.log_out)
         self.boton_cargar.clicked.connect(self.cargar_signal)
         self.boton_adelante.clicked.connect(self.adelantar_senal)
         self.boton_atras.clicked.connect(self.atrasar_senal)
         self.mostrar.clicked.connect(self.mostrarSeg)
+        self.boton_regresar.clicked.connect(self.log_out)
 
         self.boton_adelante.setEnabled(False)
         self.boton_atras.setEnabled(False)
-        self.boton_aumentar.setEnabled(False)
-        self.boton_disminuir.setEnabled(False)
+        # self.boton_aumentar.setEnabled(False)
+        # self.boton_disminuir.setEnabled(False)
 
     def log_out(self):
        self.atributos_view.show()
@@ -401,23 +441,6 @@ class InterfazGrafico(QMainWindow):
         self.sc.graficar_senal(self.__miControlador.devolverDatosSenal(self.x_min, self.x_max))
         self.boton_adelante.setEnabled(True)
         self.boton_atras.setEnabled(True)
-
-    # def cargar_senal(self):
-    #     archivo_cargado, _ = QFileDialog.getOpenFileName(self, "Abrir señal","","Todos los archivos (*);;Archivos mat (*.mat);;Python (*.py)")
-    #     if archivo_cargado != '':
-    #         print(archivo_cargado)
-            
-    #         data = sio.loadmat(archivo_cargado) # Diccionario
-    #         data = data["data"]
-    #         sensores, puntos, ensayos = data.shape
-    #         senal_continua = np.reshape(data,(sensores,puntos*ensayos),order = 'F') # Conveirte de 3D a 2D
-    #         self.__miControlador.recibirDatosSenal(senal_continua)
-    #         self.x_min = 0
-    #         self.x_max = 2000
-
-    #         self.sc.graficar_senal(self.__miControlador.devolverDatosSenal(self.x_min, self.x_max))
-    #         self.boton_adelante.setEnabled(True)
-    #         self.boton_atras.setEnabled(True)
   
     def mostrarSeg(self):
         self.x_max = int(self.maximo.text())
@@ -435,11 +458,6 @@ class InterfazGrafico(QMainWindow):
         self.x_min = self.x_min + 2000
         self.x_max = self.x_max + 2000
         self.sc.graficar_senal(self.__miControlador.devolverDatosSenal(self.x_min, self.x_max))
-
-    def aumentar(self):
-        pass
-    def disminuir(self):
-        pass
 
     def promedio(self):
         self.sc.graficaProme(self.__miControlador.calcularProm(self.x_min, self.x_max))

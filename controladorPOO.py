@@ -25,6 +25,16 @@ class Coordinador:
     def editarPaciente(self, nombre, cedula):
         return self.__miModelo.editar_paciente(self, nombre, cedula)
     
+    def mostrarVentanaEditarPaciente(self, cedula):
+        self.ventanaEditarPaciente = VentanaEditarPaciente(cedula, self)
+        self.ventanaEditarPaciente.exec()
+
+    def agregarBioseñal(self, cedula, ruta):
+        return self.__miModelo.agregar_bioseñal(cedula, ruta)
+
+    def agregarImagen(self, cedula, ruta):
+        return self.__miModelo.agregar_imagen(cedula, ruta)
+    
     def recibirSenal(self, cedula):
         return self.__miModelo.obtener_biosenal(cedula)
 

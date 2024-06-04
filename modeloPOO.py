@@ -235,6 +235,38 @@ class DataAccesObject:
             cursor.close()
             self.cerrarDB()
             return resultado
+        
+    def agregar_bioseñal(self, cedula, ruta):
+        if self.conectarDB():
+            cursor = self.conexion.cursor()
+            try:
+                query = "INSERT INTO Biosenales (ID_Cedula, Ruta) VALUES (%s, %s)"
+                cursor.execute(query, (cedula, ruta))
+                self.conexion.commit()
+                return True
+            except mysql.connector.Error as err:
+                print(f"Error: {err}")
+                return False
+            finally:
+                cursor.close()
+                self.cerrarDB()
+        return False
+
+    def agregar_imagen(self, cedula, ruta):
+        if self.conectarDB():
+            cursor = self.conexion.cursor()
+            try:
+                query = "INSERT INTO Imagenes (ID_Cedula, Ruta) VALUES (%s, %s)"
+                cursor.execute(query, (cedula, ruta))
+                self.conexion.commit()
+                return True
+            except mysql.connector.Error as err:
+                print(f"Error: {err}")
+                return False
+            finally:
+                cursor.close()
+                self.cerrarDB()
+        return False
 
 
 # class Paciente:

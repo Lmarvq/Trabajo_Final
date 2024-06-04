@@ -63,32 +63,6 @@
      <string>--&gt;</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="boton_disminuir">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>470</y>
-      <width>75</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Disminuir</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="boton_aumentar">
-    <property name="geometry">
-     <rect>
-      <x>220</x>
-      <y>470</y>
-      <width>75</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Aumentar</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="mostrar">
     <property name="geometry">
      <rect>
@@ -146,6 +120,19 @@
     </property>
     <property name="text">
      <string>Valor Maximo</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="boton_regresar">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>470</y>
+      <width>271</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Regresar</string>
     </property>
    </widget>
   </widget>
