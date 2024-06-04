@@ -323,7 +323,7 @@ class AtributosPaciente(QDialog):
         pass
     def regresar(self):
         pass
-
+"e"
 class VentanaEditarPaciente(QDialog):
     def __init__(self, cedula, controlador):
         super().__init__()
