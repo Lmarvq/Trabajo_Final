@@ -20,6 +20,18 @@ class DataAccesObject:
             self.canales = 0
             self.puntos = 0
 
+    def cargar_mat(self, file_path):
+        try:
+            mat_data = sio.loadmat(file_path)
+            for key, value in mat_data.items():
+                if isinstance(value, np.ndarray):
+                    print(f"Clave encontrada: {key}")
+                    return value
+            raise ValueError("No se encontró ningún array en el archivo .mat")
+        except Exception as e:
+            print("Error al cargar el archivo .mat:", e)
+            return None
+
     def asignarDatos(self, data):
         self.data = data  # Matriz 2D
         self.canales = data.shape[0]  # 8 canales

@@ -25,6 +25,8 @@ class Coordinador:
     def editarPaciente(self, nombre, cedula):
         return self.__miModelo.editar_paciente(self, nombre, cedula)
 
+    def cargarMat(self, archivo):
+        return self.__miModelo.cargar_mat(archivo)
 
     def agregarBioseñal(self, cedula, ruta):
         return self.__miModelo.agregar_bioseñal(cedula, ruta)

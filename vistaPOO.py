@@ -410,47 +410,6 @@ class VentanaEditarPaciente(QDialog):
                     QMessageBox.critical(self, "Error", "No se pudo cargar el archivo.")
                     self.log_out()
 
-# class VentanaEditarPaciente(QDialog):
-#     def __init__(self, cedula, controlador):
-#         super().__init__()
-#         self.cedula = cedula
-#         self.controlador = controlador
-#         self.initUI()
-
-#     def initUI(self):
-#         self.setGeometry(100, 100, 450, 350)
-#         self.setWindowTitle("Editar Paciente")
-
-#         label = QLabel(self)
-#         label.setText(f"Cédula: {self.cedula}")
-        
-#         self.bioseñalButton = QPushButton("Añadir Bioseñal", self)
-#         self.bioseñalButton.clicked.connect(self.añadirBioseñal)
-
-#         self.imagenButton = QPushButton("Añadir Imágen Médica", self)
-#         self.imagenButton.clicked.connect(self.añadirImagen)
-
-#         layout = QVBoxLayout()
-#         layout.addWidget(label)
-
-#         layout.addWidget(self.bioseñalButton)
-#         layout.addWidget(self.imagenButton)
-#         self.setLayout(layout)
-
-#         #self.show()
-
-#     def añadirBioseñal(self):
-#         options = QFileDialog.Options()
-#         filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Bioseñal", "", "MAT Files (*.mat);;All Files (*)", options=options)
-#         if filePath:
-#             self.controlador.agregarBioseñal(self.cedula, filePath)
-
-#     def añadirImagen(self):
-#         options = QFileDialog.Options()
-#         filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Imágen Médica", "", "DICOM Files (*.dcm);;NIFTI Files (*.nii);;All Files (*)", options=options)
-#         if filePath:
-#             self.controlador.agregarImagen(self.cedula, filePath)
-
 class MyGraphCanvas(FigureCanvas):
     def __init__(self, parent= None,width=6, height=5, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
@@ -520,10 +479,15 @@ class InterfazGrafico(QMainWindow):
 
     def cargar_signal(self):
         archivo = self.__miControlador.recibirSenal(self.__cedula)['Ruta']
-        data = sio.loadmat(archivo) # Diccionario
-        data = data["data"] ##revisar
-        sensores, puntos, ensayos = data.shape
-        senal_continua = np.reshape(data,(sensores,puntos*ensayos),order = 'F') # Conveirte de 3D a 2D
+        data = self.__miControlador.cargarMat(archivo)
+        if data.ndim == 3:
+            sensores, puntos, ensayos = data.shape
+            senal_continua = np.reshape(data,(sensores,puntos*ensayos),order = 'F') # Conveirte de 3D a 2D
+        elif data.ndim == 2:
+            senal_continua = data  # Si ya es 2D, no se necesita reshaping
+        else:
+            QMessageBox.critical(self, "Error", "No se pudo graficar, dimensión de datos no compatible.")
+            self.log_out()
         self.__miControlador.recibirDatosSenal(senal_continua)
         self.x_min = 0
         self.x_max = 2000
