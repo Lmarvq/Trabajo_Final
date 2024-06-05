@@ -239,6 +239,15 @@ class DataAccesObject:
             self.cerrarDB()
             return resultado
         
+    def obtener_imagen(self, cedula):
+        if self.conectarDB():
+            cursor = self.conexion.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM Imagenes WHERE ID_cedula = %s", (cedula,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            self.cerrarDB()
+            return resultado
+        
     def agregar_bioseñal(self, cedula, ruta):
         if self.conectarDB():
             cursor = self.conexion.cursor()

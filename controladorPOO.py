@@ -48,6 +48,9 @@ class Coordinador:
     def calcularProm(self):
         self.__miModelo.promedio()
 
+    def recibirImagen(self, cedula):
+        return self.__miModelo.obtener_imagen(cedula)
+
 
 
 if __name__ == "__main__":

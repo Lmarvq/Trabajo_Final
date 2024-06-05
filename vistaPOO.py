@@ -1,15 +1,19 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtGui import QFont, QPixmap, QImage
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.uic import loadUi
 
+import os
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt import FigureCanvasQT as FigureCanvasI
 from numpy.core.numerictypes import *
 import scipy.io as sio
 import numpy as np
 import pyqtgraph as pg
+from pydicom import dcmread
 
 class VentanaLogin(QWidget):
     def __init__(self):
@@ -316,7 +320,10 @@ class AtributosPaciente(QDialog):
         self.hide()
     def mostrar_imagen(self):
         cedula = self.paciente['Cedula']
-        pass
+        self.imagen_view = ImagenesPaciente(self, cedula)
+        self.imagen_view.setControlador(self.__miControlador)
+        self.imagen_view.show()
+        self.hide()
 
 "e"
 class VentanaEditarPaciente(QDialog):
@@ -514,3 +521,100 @@ class InterfazGrafico(QMainWindow):
 
     def promedio(self):
         self.sc.graficaProme(self.__miControlador.calcularProm(self.x_min, self.x_max))
+
+class MyImageCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=6, height=5, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        self.compute_initial_figure()
+        FigureCanvas.__init__(self, self.fig)
+
+    def compute_initial_figure(self):
+        pass  # No hay figura inicial para mostrar
+
+    def mostrar_imagen(self, imagen):
+        self.axes.clear()
+        self.axes.imshow(imagen, cmap='gray')
+        self.axes.set_title('Imagen DICOM')
+        self.draw()
+
+class ImagenesPaciente(QDialog):
+    def __init__(self, pacientes_view, cedula):
+        super().__init__()
+        self.pacientes_view = pacientes_view
+        self.cedula = cedula
+        self.__miControlador = None
+        self.raiseImagenesPaciente()
+
+    def setControlador(self, c):
+        self.__miControlador = c
+
+    def raiseImagenesPaciente(self):
+        self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle("Imágenes Paciente")
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.campo_imagen = QLabel()
+        self.layout.addWidget(self.campo_imagen)
+        self.canvas = MyImageCanvas(self.campo_imagen, width=5, height=4, dpi=100)
+        self.layout.addWidget(self.canvas)
+        self.setLayout(self.layout)
+
+        self.label = QLabel()
+        self.layout.addWidget(self.label)
+
+        self.button_anterior = QPushButton("Anterior")
+        self.button_anterior.clicked.connect(self.anterior_imagen)
+        self.layout.addWidget(self.button_anterior)
+
+        self.button_siguiente = QPushButton("Siguiente")
+        self.button_siguiente.clicked.connect(self.siguiente_imagen)
+        self.layout.addWidget(self.button_siguiente)
+
+        self.button_cargar = QPushButton("Cargar")
+        self.button_cargar.clicked.connect(self.cargar_carpeta)
+        self.layout.addWidget(self.button_cargar)
+
+        self.regresar_button = QPushButton("Regresar")
+        #self.regresar_button.clicked.connect()
+        self.layout.addWidget(self.regresar_button)
+
+        self.carpeta_seleccionada = None
+        self.lista_imagenes = []
+        self.imagen_actual = 0
+
+    def cargar_carpeta(self):
+        self.carpeta_seleccionada = self.__miControlador.recibirImagen(self.cedula)['Ruta']
+        if self.carpeta_seleccionada:
+            archivos_dicom = [f for f in os.listdir(self.carpeta_seleccionada) if f.endswith('.dcm')]
+            self.lista_imagenes = []
+            for archivo in archivos_dicom:
+                ruta_archivo = os.path.join(self.carpeta_seleccionada, archivo)
+                ds = dcmread(ruta_archivo)
+                pixel_array = ds.pixel_array
+                self.lista_imagenes.append((ds, pixel_array, archivo))  # Agregamos el nombre de archivo a la tupla
+            self.imagen_actual = 0
+            ds, pixel_array, archivo = self.lista_imagenes[self.imagen_actual]
+            self.mostrar_imagen(ds, pixel_array)
+
+    def mostrar_imagen(self, ds, pixel_array):
+        pixel_array = ds.pixel_array
+        self.canvas.mostrar_imagen(pixel_array)
+
+    def anterior_imagen(self):
+        if self.lista_imagenes:
+            self.imagen_actual -= 1
+            if self.imagen_actual < 0:
+                self.imagen_actual = len(self.lista_imagenes) - 1
+            ds, pixel_array, archivo = self.lista_imagenes[self.imagen_actual]
+            self.mostrar_imagen(ds, pixel_array)
+
+    def siguiente_imagen(self):
+        if self.lista_imagenes:
+            self.imagen_actual += 1
+            if self.imagen_actual >= len(self.lista_imagenes):
+                self.imagen_actual = 0
+            ds, pixel_array, archivo = self.lista_imagenes[self.imagen_actual]
+            self.mostrar_imagen(ds, pixel_array)
