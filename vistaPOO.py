@@ -539,15 +539,19 @@ class MyImageCanvas(FigureCanvas):
         self.draw()
 
 class ImagenesPaciente(QDialog):
-    def __init__(self, pacientes_view, cedula):
+    def __init__(self, atributos_view, cedula):
         super().__init__()
-        self.pacientes_view = pacientes_view
+        self.atributos_view = atributos_view
         self.cedula = cedula
         self.__miControlador = None
         self.raiseImagenesPaciente()
 
     def setControlador(self, c):
         self.__miControlador = c
+
+    def log_out(self):
+       self.atributos_view.show()
+       self.close()
 
     def raiseImagenesPaciente(self):
         self.setGeometry(100, 100, 800, 600)
@@ -578,7 +582,7 @@ class ImagenesPaciente(QDialog):
         self.layout.addWidget(self.button_cargar)
 
         self.regresar_button = QPushButton("Regresar")
-        #self.regresar_button.clicked.connect()
+        self.regresar_button.clicked.connect(self.log_out)
         self.layout.addWidget(self.regresar_button)
 
         self.carpeta_seleccionada = None
