@@ -186,8 +186,8 @@ class PacientesView(QWidget):
         add_button.clicked.connect(self.add_patient)
         button_layout.addWidget(add_button)
         
-        edit_button = QPushButton("Editar Paciente")
-        edit_button.clicked.connect(self.add_patient)
+        edit_button = QPushButton("Editar Paciente", self)
+        edit_button.clicked.connect(self.editar_paciente)
         button_layout.addWidget(edit_button)
         
         delete_button = QPushButton("Eliminar Paciente")
@@ -203,13 +203,6 @@ class PacientesView(QWidget):
         self.load_data()
 
         self.table_view.doubleClicked.connect(self.open_patient_details)
-
-        self.editarButton = QPushButton("Editar Paciente", self)
-        self.editarButton.clicked.connect(self.editar_paciente)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.editarButton)
-        self.setLayout(layout)
 
     def open_patient_details(self, index):
         row = index.row()
@@ -248,10 +241,14 @@ class PacientesView(QWidget):
                     self.load_data()
 
     def editar_paciente(self):
-        selected_row = self.table.currentRow()
-        if selected_row >= 0:
-            cedula_paciente = self.table.item(selected_row, 1).text()
-            self.controlador.mostrarVentanaEditarPaciente(cedula_paciente)
+        selected_indexes = self.table_view.selectionModel().selectedIndexes()
+        if selected_indexes:
+            row = selected_indexes[0].row()  # Obtenemos el índice de la fila seleccionada
+            cedula_paciente = self.table_view.model().index(row, 1).data()
+            self.pacientes_view = VentanaEditarPaciente(self, cedula_paciente)
+            self.pacientes_view.setControlador(self.__miControlador)
+            self.pacientes_view.show()
+            self.hide()
 
     def delete_patient(self):
         selected = self.table_view.selectionModel().selectedRows()
@@ -309,7 +306,6 @@ class AtributosPaciente(QDialog):
         regresar_button.setText('Regresar')
         regresar_button.resize(400, 50)
         regresar_button.move(30, 330)
-        regresar_button.clicked.connect(self.mostrar_imagen)
         regresar_button.clicked.connect(self.log_out)
 
     def mostrar_biosignal(self):
@@ -321,46 +317,139 @@ class AtributosPaciente(QDialog):
     def mostrar_imagen(self):
         cedula = self.paciente['Cedula']
         pass
-    def regresar(self):
-        pass
+
 "e"
 class VentanaEditarPaciente(QDialog):
-    def __init__(self, cedula, controlador):
+    def __init__(self, paciente_view, cedula):
         super().__init__()
+        self.__miControlador = None
+        self.paciente_view = paciente_view
         self.cedula = cedula
-        self.controlador = controlador
-        self.initUI()
+        self.ventanaOpciones()
 
-    def initUI(self):
-        self.setWindowTitle("Editar Paciente")
+    def setControlador(self, c):
+        self.__miControlador = c
+
+    def log_out(self):
+        self.paciente_view.show()
+        self.close()
+
+    def ventanaOpciones(self):
+        self.setGeometry(100, 100, 450, 350)
+        self.setWindowTitle("Editar paciente")
+
+        regresar_button = QPushButton(self)
+        regresar_button.setText('Regresar')
+        regresar_button.resize(400, 50)
+        regresar_button.move(30, 150)
+        regresar_button.clicked.connect(self.log_out)
+
+        self.biosignal_button = QPushButton(self)
+        self.biosignal_button.setText('Manejar Bioseñales')
+        self.biosignal_button.resize(300, 50)
+        self.biosignal_button.move(30, 210)
+        self.biosignal_button.clicked.connect(self.manejar_biosenales)
+
+        self.imagen_button = QPushButton(self)
+        self.imagen_button.setText('Manejar Imágenes')
+        self.imagen_button.resize(300, 50)
+        self.imagen_button.move(30, 270)
+        self.imagen_button.clicked.connect(self.manejar_imagenes)
+
+        confirmar_button = QPushButton(self)
+        confirmar_button.setText('Confirmar')
+        confirmar_button.resize(80, 50)
+        confirmar_button.move(350, 210)
+        confirmar_button.clicked.connect(self.confirmar_seleccion)
+
+        confirmar_button1 = QPushButton(self)
+        confirmar_button1.setText('Confirmar')
+        confirmar_button1.resize(80, 50)
+        confirmar_button1.move(350, 270)
+        confirmar_button1.clicked.connect(self.confirmar_seleccion)
+
+
+    def manejar_imagenes(self):
+        try:
+            folder_path = QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de imágenes")
+            if folder_path:
+                print("Carpeta de imágenes seleccionada:", folder_path)
+                self.ruta_seleccionada = folder_path
+                self.imagen_button.setStyleSheet("background-color: green")
+                self.tipoDato = True
+            else:
+                QMessageBox.critical(self, "Error", "No se pudo cargar el archivo.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f'{e}')
+
+    def manejar_biosenales(self):
+        try:
+            file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo de bioseñales", "", "Archivos MAT (*.mat)")
+            if file_path:
+                print("Archivo de bioseñales seleccionado:", file_path)
+                self.ruta_seleccionada = file_path
+                self.biosignal_button.setStyleSheet("background-color: green")
+                self.tipoDato = False
+            else:
+                QMessageBox.critical(self, "Error", "No se pudo cargar el archivo.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f'{e}')
+
+    def confirmar_seleccion(self):
+        if self.ruta_seleccionada:
+            if self.tipoDato == True:
+                if self.__miControlador.agregarImagen(self.cedula, self.ruta_seleccionada):  # Guardar la ruta en la base de datos
+                    self.log_out()
+                else:
+                    QMessageBox.critical(self, "Error", "No se pudo cargar el archivo.")
+                    self.log_out()
+            else:
+                if self.__miControlador.agregarBioseñal(self.cedula, self.ruta_seleccionada):  # Guardar la ruta en la base de datos
+                    self.log_out()
+                else:
+                    QMessageBox.critical(self, "Error", "No se pudo cargar el archivo.")
+                    self.log_out()
+
+# class VentanaEditarPaciente(QDialog):
+#     def __init__(self, cedula, controlador):
+#         super().__init__()
+#         self.cedula = cedula
+#         self.controlador = controlador
+#         self.initUI()
+
+#     def initUI(self):
+#         self.setGeometry(100, 100, 450, 350)
+#         self.setWindowTitle("Editar Paciente")
+
+#         label = QLabel(self)
+#         label.setText(f"Cédula: {self.cedula}")
         
-        self.label = QLabel(f"Cédula: {self.cedula}")
-        
-        self.bioseñalButton = QPushButton("Añadir Bioseñal", self)
-        self.bioseñalButton.clicked.connect(self.añadirBioseñal)
+#         self.bioseñalButton = QPushButton("Añadir Bioseñal", self)
+#         self.bioseñalButton.clicked.connect(self.añadirBioseñal)
 
-        self.imagenButton = QPushButton("Añadir Imágen Médica", self)
-        self.imagenButton.clicked.connect(self.añadirImagen)
+#         self.imagenButton = QPushButton("Añadir Imágen Médica", self)
+#         self.imagenButton.clicked.connect(self.añadirImagen)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
+#         layout = QVBoxLayout()
+#         layout.addWidget(label)
 
-        layout.addWidget(self.bioseñalButton)
-        layout.addWidget(self.imagenButton)
-        self.setLayout(layout)
+#         layout.addWidget(self.bioseñalButton)
+#         layout.addWidget(self.imagenButton)
+#         self.setLayout(layout)
 
-    def añadirBioseñal(self):
-        options = QFileDialog.Options()
-        filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Bioseñal", "", "MAT Files (*.mat);;All Files (*)", options=options)
-        if filePath:
-            self.controlador.agregarBioseñal(self.cedula, filePath)
+#         #self.show()
 
-    def añadirImagen(self):
-        options = QFileDialog.Options()
-        filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Imágen Médica", "", "DICOM Files (*.dcm);;NIFTI Files (*.nii);;All Files (*)", options=options)
-        if filePath:
-            self.controlador.agregarImagen(self.cedula, filePath)
+#     def añadirBioseñal(self):
+#         options = QFileDialog.Options()
+#         filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Bioseñal", "", "MAT Files (*.mat);;All Files (*)", options=options)
+#         if filePath:
+#             self.controlador.agregarBioseñal(self.cedula, filePath)
 
+#     def añadirImagen(self):
+#         options = QFileDialog.Options()
+#         filePath, _ = QFileDialog.getOpenFileName(self, "Seleccionar Imágen Médica", "", "DICOM Files (*.dcm);;NIFTI Files (*.nii);;All Files (*)", options=options)
+#         if filePath:
+#             self.controlador.agregarImagen(self.cedula, filePath)
 
 class MyGraphCanvas(FigureCanvas):
     def __init__(self, parent= None,width=6, height=5, dpi=100):

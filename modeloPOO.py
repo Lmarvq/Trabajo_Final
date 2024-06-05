@@ -218,15 +218,6 @@ class DataAccesObject:
                 self.cerrarDB()
         return False
 
-    def obtener_medicamentos(self, cedula):
-        if self.conectarDB():
-            cursor = self.conexion.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM Medicamentos WHERE ID_Cedula = %s", (cedula,))
-            resultados = cursor.fetchall()
-            cursor.close()
-            self.cerrarDB()
-            return resultados
-
     def obtener_biosenal(self, cedula):
         if self.conectarDB():
             cursor = self.conexion.cursor(dictionary=True)
@@ -267,59 +258,3 @@ class DataAccesObject:
                 cursor.close()
                 self.cerrarDB()
         return False
-
-
-# class Paciente:
-#     def __init__(self, dao):
-#         self.dao = dao
-#         self.__nombre=""
-#         self.__cedula=0
-#         self.__biosignal = self.cargar_biosenal
-
-#     def AsignarNombre(self, n):
-#         self.__nombre = n
-
-#     def AsignarCedula(self, c):
-#         self.__cedula = c
-
-#     def VerNombre(self):
-#         return self.__nombre
-
-#     def VerCedula(self):
-#         return self.__cedula
-
-#     def cargar_biosenal(self):
-#         biosenal_data = self.dao.obtener_biosenal(self.__cedula)
-#         if biosenal_data:
-#             ruta = biosenal_data['Ruta']
-#             data = sio.loadmat(ruta)['data']
-#             return Biosenal(data)
-#         return None
-
-# class Biosenal:
-#     def __init__(self,data = None):
-#         if data is not None:
-#             self.asignarDatos(data)
-#         else:
-#             self.data = []
-#             self.canales = 0
-#             self.puntos = 0
-
-#     def asignarDatos(self,data):
-#         self.data = data # Matriz 2D
-#         self.canales = data.shape[0] #8 canales
-#         self.puntos = data.shape[1]  #360000 puntos
-
-#     def devolver_segmento(self, x_min, x_max):
-#         if x_min >= x_max:
-#             return None
-#         return self.data[:,x_min:x_max]
-
-#     def escalar_senal(self,x_min,x_max, escala):
-#         if x_min >= x_max:
-#             return None
-#         copia_data = self.data[:,x_min:x_max].copy()
-#         return copia_data*escala
-
-#     def promedio(self,c,xmax,xmin):
-#         return np.mean(self.data[c, xmin:xmax],0)
