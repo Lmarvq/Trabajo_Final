@@ -3,9 +3,6 @@ import mysql.connector.cursor
 import numpy as np
 import scipy.io as sio
 
-# Hola
-
-
 class DataAccesObject:
     def __init__(self, data=None) -> None:
         self.__host = ""
